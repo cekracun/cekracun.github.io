@@ -61,6 +61,17 @@
         </div>
       </div>
 
+      <div class="theme-bar" role="group" aria-label="Paket Tema 1-Klik">
+        <span class="theme-bar-label">PAKET TEMA 1-KLIK:</span>
+        <div class="theme-pills" id="sim-theme-pills">
+          <button type="button" class="theme-pill" data-theme="kos" data-cat="kos" data-budget="150000" data-max="0">Starter Anak Kos · 150rb</button>
+          <button type="button" class="theme-pill" data-theme="desk" data-cat="desk" data-budget="250000" data-max="0">Meja Kerja Rapi · 250rb</button>
+          <button type="button" class="theme-pill" data-theme="dapur" data-cat="dapur" data-budget="100000" data-max="0">Dapur Praktis · 100rb</button>
+          <button type="button" class="theme-pill" data-theme="skincare" data-cat="skincare" data-budget="100000" data-max="0">Wangi &amp; Glowing · 100rb</button>
+          <button type="button" class="theme-pill is-impulse" data-theme="impulse" data-cat="all" data-budget="75000" data-max="20000">⚡ Serba &lt;20rb · 75rb</button>
+        </div>
+      </div>
+
       <div class="sim-workspace">
         <aside class="control-card">
           <div class="control-group">
@@ -101,6 +112,7 @@
 
           <div class="control-actions">
             <button type="button" id="sim-reroll-btn" class="btn-primary">Rakit Ulang Kombinasi</button>
+            <button type="button" id="sim-receipt-btn" class="btn-secondary">Lihat Struk Racikan 🧾</button>
             <button type="button" id="sim-copy-btn" class="btn-secondary">Salin Daftar &amp; Link</button>
           </div>
           <p class="hint-note" id="sim-copy-feedback" aria-live="polite"></p>
@@ -112,6 +124,32 @@
             <span class="results-meta" id="sim-lock-info">Klik tombol Kunci pada item untuk mempertahankannya saat diacak ulang</span>
           </div>
           <div id="sim-list" class="bundle-list"></div>
+        </div>
+      </div>
+
+      <!-- Modal Struk CekRacun (Siap Screenshot untuk Threads/IG) -->
+      <div id="receipt-modal" class="receipt-backdrop" role="dialog" aria-modal="true" aria-labelledby="receipt-heading" hidden>
+        <div class="receipt-sheet">
+          <div class="receipt-head">
+            <span class="receipt-brand">● CEKRACUN</span>
+            <h3 id="receipt-heading">STRUK RACIKAN BUDGET</h3>
+            <p class="num" id="receipt-meta">PAKET HEMAT</p>
+          </div>
+          <div class="receipt-divider"></div>
+          <ol class="receipt-items num" id="receipt-items"></ol>
+          <div class="receipt-divider"></div>
+          <div class="receipt-totals num">
+            <div><span>TOTAL RACIKAN</span><strong id="receipt-total">Rp0</strong></div>
+            <div><span>SISA BUDGET</span><strong id="receipt-left">Rp0</strong></div>
+          </div>
+          <div class="receipt-stamp">
+            <span>Screenshot &amp; tag teman kosmu</span>
+            <strong>cekracun.github.io</strong>
+          </div>
+          <div class="receipt-actions">
+            <button type="button" id="receipt-copy-btn" class="btn-primary">Salin Daftar &amp; Link</button>
+            <button type="button" id="receipt-close-btn" class="btn-secondary">Tutup</button>
+          </div>
         </div>
       </div>
     </section>
@@ -203,6 +241,7 @@
         </div>
         <div class="chip-strip" id="price-filter-chips" role="group" aria-label="Filter Batas Harga">
           <button type="button" class="chip is-active" data-max="0">Semua Harga</button>
+          <button type="button" class="chip" data-max="20000">⚡ &lt; Rp20rb</button>
           <button type="button" class="chip" data-max="25000">&lt; Rp25rb</button>
           <button type="button" class="chip" data-max="50000">&lt; Rp50rb</button>
           <button type="button" class="chip" data-max="100000">&lt; Rp100rb</button>

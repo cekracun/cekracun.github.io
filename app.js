@@ -70,6 +70,8 @@
   const simState = {
     budget: 150000,
     cat: "all",
+    maxItemPrice: 0,
+    activeTheme: "",
     lockedIds: new Set(),
     bundle: [],
   };
@@ -77,6 +79,7 @@
   const simBudgetInput = document.getElementById("sim-budget-input");
   const simBudgetRange = document.getElementById("sim-budget-range");
   const simPresetBtns = [...document.querySelectorAll("#panel-simulator .preset-btn")];
+  const simThemePills = [...document.querySelectorAll("#sim-theme-pills .theme-pill")];
   const simCatChips = [...document.querySelectorAll("#sim-cat-chips .chip")];
   const simSpentEl = document.getElementById("sim-spent");
   const simLeftEl = document.getElementById("sim-left");
@@ -85,8 +88,17 @@
   const simMeterCaption = document.getElementById("sim-meter-caption");
   const simListEl = document.getElementById("sim-list");
   const simRerollBtn = document.getElementById("sim-reroll-btn");
+  const simReceiptBtn = document.getElementById("sim-receipt-btn");
   const simCopyBtn = document.getElementById("sim-copy-btn");
   const simCopyFeedback = document.getElementById("sim-copy-feedback");
+
+  const receiptModal = document.getElementById("receipt-modal");
+  const receiptMetaEl = document.getElementById("receipt-meta");
+  const receiptItemsEl = document.getElementById("receipt-items");
+  const receiptTotalEl = document.getElementById("receipt-total");
+  const receiptLeftEl = document.getElementById("receipt-left");
+  const receiptCopyBtn = document.getElementById("receipt-copy-btn");
+  const receiptCloseBtn = document.getElementById("receipt-close-btn");
 
   function itemQualityScore(item) {
     const soldBoost = Math.log10(Math.max(item.s, 10) + 1);
@@ -104,11 +116,12 @@
       // Keep current items that still fit if budget shrunk
     }
 
+    const itemCap = simState.maxItemPrice > 0 ? Math.min(simState.maxItemPrice, simState.budget) : simState.budget;
     const pool = PRODUCTS.filter(
       (x) =>
         (simState.cat === "all" || x.c === simState.cat) &&
         !usedIds.has(x.id) &&
-        x.p <= simState.budget
+        x.p <= itemCap
     );
 
     const ranked = pool
@@ -172,10 +185,16 @@
       catBadge.textContent = CAT_LABELS[item.c] || item.c;
       badges.appendChild(catBadge);
 
+      if (item.p < 20000) {
+        const impBadge = document.createElement("span");
+        impBadge.className = "badge badge-impulse";
+        impBadge.textContent = "⚡ <20rb";
+        badges.appendChild(impBadge);
+      }
       if (item.st) {
         const soldBadge = document.createElement("span");
         soldBadge.className = "badge badge-sold";
-        soldBadge.textContent = `${item.st} terjual`;
+        soldBadge.textContent = item.s >= 10000 ? `🔥 ${item.st} terjual` : `${item.st} terjual`;
         badges.appendChild(soldBadge);
       }
       if (item.r) {
@@ -225,11 +244,12 @@
         usedIds.add(item.id);
         const currentSpent = simState.bundle.reduce((s, x) => s + x.p, 0);
         const budgetLeft = simState.budget - currentSpent;
+        const itemCap = simState.maxItemPrice > 0 ? Math.min(simState.maxItemPrice, budgetLeft) : budgetLeft;
         const candidate = PRODUCTS.find(
           (x) =>
             (simState.cat === "all" || x.c === simState.cat) &&
             !usedIds.has(x.id) &&
-            x.p <= budgetLeft
+            x.p <= itemCap
         );
         if (candidate) simState.bundle.push(candidate);
         renderSimulator();
@@ -250,9 +270,20 @@
     });
   }
 
-  function setBudget(val) {
+  function syncThemePills() {
+    simThemePills.forEach((p) => {
+      p.classList.toggle("is-active", p.dataset.theme === simState.activeTheme);
+    });
+  }
+
+  function setBudget(val, keepTheme = false) {
     const clean = Math.max(15000, Math.min(2000000, Number(val) || 150000));
     simState.budget = clean;
+    if (!keepTheme) {
+      simState.maxItemPrice = 0;
+      simState.activeTheme = "";
+      syncThemePills();
+    }
     simBudgetInput.value = clean;
     simBudgetRange.value = Math.min(1000000, clean);
     simPresetBtns.forEach((b) => {
@@ -269,21 +300,35 @@
   simCatChips.forEach((chip) => {
     chip.addEventListener("click", () => {
       simState.cat = chip.dataset.cat;
+      simState.maxItemPrice = 0;
+      simState.activeTheme = "";
+      syncThemePills();
       simCatChips.forEach((c) => c.classList.toggle("is-active", c === chip));
       simState.lockedIds.clear();
       buildBundle(true);
     });
   });
 
+  simThemePills.forEach((pill) => {
+    pill.addEventListener("click", () => {
+      simState.cat = pill.dataset.cat;
+      simState.maxItemPrice = Number(pill.dataset.max) || 0;
+      simState.activeTheme = pill.dataset.theme;
+      syncThemePills();
+      simCatChips.forEach((c) => c.classList.toggle("is-active", c.dataset.cat === simState.cat));
+      setBudget(pill.dataset.budget, true);
+    });
+  });
+
   simRerollBtn.addEventListener("click", () => buildBundle(true));
 
-  simCopyBtn.addEventListener("click", async () => {
+  async function copyCurrentBundle() {
     if (simState.bundle.length === 0) return;
     const total = simState.bundle.reduce((s, x) => s + x.p, 0);
     const lines = [
       `Racikan Setup Budget ${fmtRp(simState.budget)} (${CAT_LABELS[simState.cat]}):`,
       ...simState.bundle.map((x, idx) => `${idx + 1}. ${x.t} — ${fmtRp(x.p)}\n   ${x.u}`),
-      `Total: ${fmtRp(total)} (dari CekRacun)`,
+      `Total: ${fmtRp(total)} · Cek di https://cekracun.github.io`,
     ];
     try {
       await navigator.clipboard.writeText(lines.join("\n"));
@@ -294,6 +339,46 @@
     setTimeout(() => {
       simCopyFeedback.textContent = "";
     }, 3000);
+  }
+
+  function openReceipt() {
+    if (simState.bundle.length === 0) return;
+    const total = simState.bundle.reduce((s, x) => s + x.p, 0);
+    const left = Math.max(0, simState.budget - total);
+    receiptMetaEl.textContent = `${CAT_LABELS[simState.cat].toUpperCase()} · BUDGET ${fmtRp(simState.budget)}`;
+    receiptItemsEl.innerHTML = "";
+    simState.bundle.forEach((item) => {
+      const li = document.createElement("li");
+      const line = document.createElement("div");
+      line.className = "receipt-line";
+      const name = document.createElement("span");
+      name.className = "receipt-item-name";
+      name.textContent = item.t.length > 46 ? item.t.slice(0, 45) + "…" : item.t;
+      const price = document.createElement("span");
+      price.className = "receipt-item-price";
+      price.textContent = fmtRp(item.p);
+      line.append(name, price);
+      li.appendChild(line);
+      receiptItemsEl.appendChild(li);
+    });
+    receiptTotalEl.textContent = fmtRp(total);
+    receiptLeftEl.textContent = fmtRp(left);
+    receiptModal.hidden = false;
+  }
+
+  function closeReceipt() {
+    receiptModal.hidden = true;
+  }
+
+  simCopyBtn.addEventListener("click", copyCurrentBundle);
+  receiptCopyBtn.addEventListener("click", copyCurrentBundle);
+  simReceiptBtn.addEventListener("click", openReceipt);
+  receiptCloseBtn.addEventListener("click", closeReceipt);
+  receiptModal.addEventListener("click", (e) => {
+    if (e.target === receiptModal) closeReceipt();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !receiptModal.hidden) closeReceipt();
   });
 
   // =========================================================
@@ -484,6 +569,17 @@
       tag.textContent = CAT_LABELS[item.c] || item.c;
 
       thumbWrap.append(img, tag);
+      if (item.p < 20000) {
+        const impTag = document.createElement("span");
+        impTag.className = "product-impulse-tag";
+        impTag.textContent = "⚡ <20rb";
+        thumbWrap.appendChild(impTag);
+      } else if (item.s >= 10000) {
+        const impTag = document.createElement("span");
+        impTag.className = "product-impulse-tag";
+        impTag.textContent = "🔥 Laris";
+        thumbWrap.appendChild(impTag);
+      }
 
       const body = document.createElement("div");
       body.className = "product-body";
