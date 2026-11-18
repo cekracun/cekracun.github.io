@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CekRacun — Simulator Rakit Budget &amp; Katalog Racun Shopee</title>
+  <meta name="description" content="Rakit paket setup kamar kos, meja kerja, dapur, dan skincare sesuai budget nyata. Mainkan Tebak Harga Racun Shopee atau cari barang terlaris terkurasi.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="brand-block">
+        <a href="#simulator" class="brand-mark" aria-label="CekRacun Beranda">
+          <span class="brand-dot" aria-hidden="true"></span>
+          <span class="brand-word">CekRacun</span>
+        </a>
+        <span class="brand-meta" id="catalog-stat-pill">Memuat katalog...</span>
+      </div>
+
+      <nav class="mode-tabs" role="tablist" aria-label="Mode CekRacun">
+        <button class="mode-tab is-active" role="tab" aria-selected="true" data-mode="simulator" id="tab-simulator">
+          <span class="tab-num">01</span> Rakit Budget
+        </button>
+        <button class="mode-tab" role="tab" aria-selected="false" data-mode="game" id="tab-game">
+          <span class="tab-num">02</span> Tebak Harga
+        </button>
+        <button class="mode-tab" role="tab" aria-selected="false" data-mode="katalog" id="tab-katalog">
+          <span class="tab-num">03</span> Katalog &amp; Filter
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container main-wrap">
+    <!-- MODE 01: BUDGET SETUP SIMULATOR -->
+    <section id="panel-simulator" class="mode-panel is-active" role="tabpanel" aria-labelledby="tab-simulator">
+      <div class="editorial-hero">
+        <div class="hero-copy">
+          <p class="eyebrow">SIMULATOR PAKET SETUP · REAL-TIME SHOPEE</p>
+          <h1>Punya budget pas-pasan? <em>Racik otomatis</em> sampai maksimal.</h1>
+          <p class="hero-sub">Pilih kategori dan tentukan batas anggaranmu. Mesin memilihkan kombinasi barang terlaris &amp; rating tertinggi yang pas masuk ke budget — tanpa melebihi sepeser pun.</p>
+        </div>
+        <div class="hero-kpi-grid" aria-label="Ringkasan Simulator">
+          <div class="kpi-box">
+            <span class="kpi-label">TERPAKAI</span>
+            <strong class="kpi-val num" id="sim-spent">Rp0</strong>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-label">SISA BUDGET</span>
+            <strong class="kpi-val num" id="sim-left">Rp0</strong>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-label">JUMLAH BARANG</span>
+            <strong class="kpi-val num" id="sim-count">0 item</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="sim-workspace">
+        <aside class="control-card">
+          <div class="control-group">
+            <label class="field-label" for="sim-budget-input">Batas Budget (IDR)</label>
+            <div class="budget-input-row">
+              <span class="currency-prefix">Rp</span>
+              <input type="number" id="sim-budget-input" class="num" min="15000" max="2000000" step="5000" value="150000">
+            </div>
+            <input type="range" id="sim-budget-range" min="25000" max="1000000" step="5000" value="150000" aria-label="Geser batas budget">
+            <div class="preset-row" role="group" aria-label="Preset Budget Cepat">
+              <button type="button" class="preset-btn" data-budget="50000">50rb</button>
+              <button type="button" class="preset-btn" data-budget="100000">100rb</button>
+              <button type="button" class="preset-btn is-selected" data-budget="150000">150rb</button>
+              <button type="button" class="preset-btn" data-budget="250000">250rb</button>
+              <button type="button" class="preset-btn" data-budget="500000">500rb</button>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <span class="field-label">Fokus Setup / Kategori</span>
+            <div class="chip-grid" id="sim-cat-chips" role="group" aria-label="Kategori Simulator">
+              <button type="button" class="chip is-active" data-cat="all">Campur Semua</button>
+              <button type="button" class="chip" data-cat="kos">Kamar Kos</button>
+              <button type="button" class="chip" data-cat="desk">Desk &amp; Gadget</button>
+              <button type="button" class="chip" data-cat="dapur">Dapur &amp; Minum</button>
+              <button type="button" class="chip" data-cat="skincare">Skincare &amp; Wangi</button>
+              <button type="button" class="chip" data-cat="gaya">Gaya &amp; Harian</button>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <span class="field-label">Pemakaian Anggaran</span>
+            <div class="meter-track" aria-hidden="true">
+              <div class="meter-fill" id="sim-meter-fill" style="width: 0%"></div>
+            </div>
+            <p class="meter-caption num" id="sim-meter-caption">0% dari Rp150.000 terpakai</p>
+          </div>
+
+          <div class="control-actions">
+            <button type="button" id="sim-reroll-btn" class="btn-primary">Rakit Ulang Kombinasi</button>
+            <button type="button" id="sim-copy-btn" class="btn-secondary">Salin Daftar &amp; Link</button>
+          </div>
+          <p class="hint-note" id="sim-copy-feedback" aria-live="polite"></p>
+        </aside>
+
+        <div class="sim-results-col">
+          <div class="results-bar">
+            <h2 class="section-title">Paket Rekomendasi Masuk Budget</h2>
+            <span class="results-meta" id="sim-lock-info">Klik tombol Kunci pada item untuk mempertahankannya saat diacak ulang</span>
+          </div>
+          <div id="sim-list" class="bundle-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODE 02: MINI-GAME TEBAK HARGA -->
+    <section id="panel-game" class="mode-panel" role="tabpanel" aria-labelledby="tab-game" hidden>
+      <div class="game-header-bar">
+        <div>
+          <p class="eyebrow">MINI-GAME · UJI INSTING HARGA</p>
+          <h2>Tebak Harga <em>Racun Shopee</em></h2>
+        </div>
+        <div class="game-stats">
+          <div class="stat-pill"><span>SKOR</span><strong class="num" id="game-score">0</strong></div>
+          <div class="stat-pill"><span>STREAK</span><strong class="num" id="game-streak">0🔥</strong></div>
+          <div class="stat-pill"><span>REKOR</span><strong class="num" id="game-best">0</strong></div>
+        </div>
+      </div>
+
+      <div class="game-stage">
+        <div class="mystery-card">
+          <div class="mystery-img-wrap">
+            <img id="game-img" src="" alt="Produk misterius">
+            <span class="mystery-cat-badge" id="game-cat">KATEGORI</span>
+          </div>
+          <div class="mystery-body">
+            <span class="mystery-sold num" id="game-sold">Terjual —</span>
+            <h3 id="game-title">Memuat produk...</h3>
+
+            <div id="game-guess-controls">
+              <label class="field-label" for="game-guess-input">Tebakan Harga Kamu (IDR)</label>
+              <div class="budget-input-row">
+                <span class="currency-prefix">Rp</span>
+                <input type="number" id="game-guess-input" class="num" min="1000" max="2000000" step="1000" value="35000">
+              </div>
+              <input type="range" id="game-guess-range" min="5000" max="300000" step="1000" value="35000" aria-label="Geser tebakan harga">
+              <div class="preset-row game-nudge-row">
+                <button type="button" class="preset-btn nudge-btn" data-delta="-10000">-10rb</button>
+                <button type="button" class="preset-btn nudge-btn" data-delta="-5000">-5rb</button>
+                <button type="button" class="preset-btn nudge-btn" data-delta="5000">+5rb</button>
+                <button type="button" class="preset-btn nudge-btn" data-delta="10000">+10rb</button>
+                <button type="button" class="preset-btn nudge-btn" data-delta="50000">+50rb</button>
+              </div>
+              <button type="button" id="game-submit-btn" class="btn-primary full-width">Kunci Tebakan</button>
+            </div>
+
+            <div id="game-reveal-box" class="reveal-box" hidden>
+              <div class="reveal-verdict" id="game-verdict">Tepat!</div>
+              <div class="reveal-numbers">
+                <div><span>Tebakanmu</span><strong class="num" id="game-your-guess">Rp0</strong></div>
+                <div><span>Harga Asli</span><strong class="num price-real" id="game-real-price">Rp0</strong></div>
+                <div><span>Selisih</span><strong class="num" id="game-diff">0%</strong></div>
+              </div>
+              <div class="reveal-actions">
+                <a id="game-shopee-link" href="#" target="_blank" rel="noopener noreferrer" class="btn-primary">Cek Barang Asli di Shopee ↗</a>
+                <button type="button" id="game-next-btn" class="btn-secondary">Lanjut Ronde Berikutnya →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODE 03: HIGH-INTENT CATALOG & FILTER -->
+    <section id="panel-katalog" class="mode-panel" role="tabpanel" aria-labelledby="tab-katalog" hidden>
+      <div class="catalog-toolbar">
+        <div class="search-wrap">
+          <label class="sr-only" for="cat-search">Cari nama barang atau merk</label>
+          <input type="search" id="cat-search" placeholder="Cari barang: kipas, parfum, wajan, sprei, mouse, tumbler...">
+        </div>
+        <div class="select-wrap">
+          <label class="sr-only" for="cat-sort">Urutkan produk</label>
+          <select id="cat-sort">
+            <option value="sold">Paling Laris</option>
+            <option value="price-asc">Harga Termurah</option>
+            <option value="price-desc">Harga Tertinggi</option>
+            <option value="rating">Rating Tertinggi</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-strips">
+        <div class="chip-strip" id="cat-filter-chips" role="group" aria-label="Filter Kategori Katalog">
+          <button type="button" class="chip is-active" data-cat="all">Semua</button>
+          <button type="button" class="chip" data-cat="kos">Kamar Kos</button>
+          <button type="button" class="chip" data-cat="desk">Desk &amp; Gadget</button>
+          <button type="button" class="chip" data-cat="dapur">Dapur &amp; Minum</button>
+          <button type="button" class="chip" data-cat="skincare">Skincare &amp; Wangi</button>
+          <button type="button" class="chip" data-cat="gaya">Gaya &amp; Harian</button>
+        </div>
+        <div class="chip-strip" id="price-filter-chips" role="group" aria-label="Filter Batas Harga">
+          <button type="button" class="chip is-active" data-max="0">Semua Harga</button>
+          <button type="button" class="chip" data-max="25000">&lt; Rp25rb</button>
+          <button type="button" class="chip" data-max="50000">&lt; Rp50rb</button>
+          <button type="button" class="chip" data-max="100000">&lt; Rp100rb</button>
+        </div>
+      </div>
+
+      <div class="results-bar">
+        <p class="results-meta num" id="cat-count-label">Menampilkan 0 produk</p>
+      </div>
+
+      <div id="cat-grid" class="product-grid"></div>
+
+      <div class="load-more-wrap">
+        <button type="button" id="cat-load-more" class="btn-secondary" hidden>Muat Lebih Banyak</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p><strong>CekRacun</strong> — Kurasi barang unik, simulator budget, &amp; perbandingan produk Shopee Indonesia.</p>
+      <p class="footer-note">Harga &amp; ketersediaan mengikuti listing Shopee terbaru saat diklik.</p>
+    </div>
+  </footer>
+
+  <script src="products.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
