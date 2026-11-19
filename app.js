@@ -370,6 +370,133 @@
     receiptModal.hidden = true;
   }
 
+  function drawReceiptCanvas() {
+    const W = 1080;
+    const items = simState.bundle.slice(0, 10);
+    const H = Math.max(1350, 760 + items.length * 74);
+    const canvas = document.createElement("canvas");
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d");
+
+    // Warm paper background + subtle dot grid
+    ctx.fillStyle = "#F7F5F0";
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "rgba(18, 18, 16, 0.08)";
+    for (let x = 28; x < W; x += 36) {
+      for (let y = 28; y < H; y += 36) {
+        ctx.fillRect(x, y, 3, 3);
+      }
+    }
+
+    // Printer slot bar
+    const rx = 110, rw = W - 220, ry = 104, rh = H - 208;
+    ctx.fillStyle = "#121210";
+    ctx.fillRect(rx - 30, ry - 14, rw + 60, 26);
+
+    // Thermal paper card
+    ctx.fillStyle = "#FFFDF8";
+    ctx.strokeStyle = "rgba(18, 18, 16, 0.24)";
+    ctx.lineWidth = 3;
+    ctx.fillRect(rx, ry, rw, rh);
+    ctx.strokeRect(rx, ry, rw, rh);
+
+    // Header
+    ctx.fillStyle = "#EE4D2D";
+    ctx.beginPath();
+    ctx.arc(W / 2 - 118, ry + 78, 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#121210";
+    ctx.font = "800 32px 'Plus Jakarta Sans', system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("CEKRACUN", W / 2 + 12, ry + 88);
+
+    ctx.font = "800 44px 'JetBrains Mono', monospace";
+    ctx.fillText("STRUK RACIKAN BUDGET", W / 2, ry + 150);
+
+    ctx.fillStyle = "#636159";
+    ctx.font = "700 22px 'JetBrains Mono', monospace";
+    ctx.fillText(`${CAT_LABELS[simState.cat].toUpperCase()} · BUDGET ${fmtRp(simState.budget)}`, W / 2, ry + 194);
+
+    // Dashed divider
+    const drawDash = (y) => {
+      ctx.save();
+      ctx.setLineDash([12, 10]);
+      ctx.strokeStyle = "rgba(18, 18, 16, 0.28)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(rx + 48, y);
+      ctx.lineTo(rx + rw - 48, y);
+      ctx.stroke();
+      ctx.restore();
+    };
+    drawDash(ry + 230);
+
+    // Line items
+    let cy = ry + 292;
+    items.forEach((item, idx) => {
+      const label = `${idx + 1}. ${item.t.length > 34 ? item.t.slice(0, 33) + "…" : item.t}`;
+      ctx.fillStyle = "#121210";
+      ctx.font = "700 26px 'Plus Jakarta Sans', system-ui, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText(label, rx + 50, cy);
+      ctx.font = "800 26px 'JetBrains Mono', monospace";
+      ctx.textAlign = "right";
+      ctx.fillText(fmtRp(item.p), rx + rw - 50, cy);
+      cy += 72;
+    });
+
+    const total = simState.bundle.reduce((s, x) => s + x.p, 0);
+    const left = Math.max(0, simState.budget - total);
+
+    drawDash(cy - 18);
+    cy += 44;
+    ctx.fillStyle = "#121210";
+    ctx.font = "800 36px 'JetBrains Mono', monospace";
+    ctx.textAlign = "left";
+    ctx.fillText("TOTAL", rx + 50, cy);
+    ctx.textAlign = "right";
+    ctx.fillText(fmtRp(total), rx + rw - 50, cy);
+
+    // Green stamp box
+    const sy = cy + 44;
+    ctx.fillStyle = "rgba(17, 122, 75, 0.12)";
+    ctx.strokeStyle = "#117A4B";
+    ctx.lineWidth = 3;
+    ctx.fillRect(rx + 50, sy, rw - 100, 82);
+    ctx.strokeRect(rx + 50, sy, rw - 100, 82);
+    ctx.fillStyle = "#117A4B";
+    ctx.font = "800 28px 'JetBrains Mono', monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(`SISA BUDGET ${fmtRp(left)} · LOLOS!`, W / 2, sy + 52);
+
+    // Footer URL
+    ctx.fillStyle = "#3F3E38";
+    ctx.font = "700 24px 'JetBrains Mono', monospace";
+    ctx.fillText("cekracun.github.io  ·  923 Produk Shopee Terverifikasi", W / 2, ry + rh - 44);
+    return canvas;
+  }
+
+  function exportReceiptPng() {
+    if (simState.bundle.length === 0) return;
+    const canvas = drawReceiptCanvas();
+    const fname = `struk-cekracun-${simState.budget}.png`;
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fname;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    }, "image/png");
+  }
+
+  const receiptDownloadBtn = document.getElementById("receipt-download-btn");
+  if (receiptDownloadBtn) receiptDownloadBtn.addEventListener("click", exportReceiptPng);
+
   simCopyBtn.addEventListener("click", copyCurrentBundle);
   receiptCopyBtn.addEventListener("click", copyCurrentBundle);
   simReceiptBtn.addEventListener("click", openReceipt);
