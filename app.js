@@ -325,10 +325,13 @@
   async function copyCurrentBundle() {
     if (simState.bundle.length === 0) return;
     const total = simState.bundle.reduce((s, x) => s + x.p, 0);
+    const deepLink = simState.activeTheme
+      ? `https://cekracun.github.io/?theme=${simState.activeTheme}&budget=${simState.budget}`
+      : `https://cekracun.github.io/?cat=${simState.cat}&budget=${simState.budget}`;
     const lines = [
       `Racikan Setup Budget ${fmtRp(simState.budget)} (${CAT_LABELS[simState.cat]}):`,
       ...simState.bundle.map((x, idx) => `${idx + 1}. ${x.t} — ${fmtRp(x.p)}\n   ${x.u}`),
-      `Total: ${fmtRp(total)} · Cek di https://cekracun.github.io`,
+      `Total: ${fmtRp(total)} · Buka paket ini: ${deepLink}`,
     ];
     try {
       await navigator.clipboard.writeText(lines.join("\n"));
@@ -782,9 +785,80 @@
     renderCatalog();
   });
 
+  // =========================================================
+  // DEEP-LINK QUERY PARAMS & ATTRIBUTION (?theme, ?cat, ?budget, ?q, ?mode, ?ref)
+  // =========================================================
+  function applyDeepLinkAndAttribution() {
+    const params = new URLSearchParams(window.location.search);
+    const ref = (params.get("ref") || "").trim().toLowerCase().slice(0, 48);
+    if (ref) {
+      sessionStorage.setItem("cekracun_ref", ref);
+      try {
+        const stats = JSON.parse(localStorage.getItem("cekracun_attr_v1") || "{}");
+        stats[ref] = stats[ref] || { visits: 0, clicks: 0 };
+        stats[ref].visits += 1;
+        localStorage.setItem("cekracun_attr_v1", JSON.stringify(stats));
+      } catch {}
+    }
+
+    document.addEventListener("click", (e) => {
+      const a = e.target.closest && e.target.closest('a[href*="shopee"]');
+      if (!a) return;
+      const activeRef = sessionStorage.getItem("cekracun_ref") || "direct";
+      try {
+        const stats = JSON.parse(localStorage.getItem("cekracun_attr_v1") || "{}");
+        stats[activeRef] = stats[activeRef] || { visits: 0, clicks: 0 };
+        stats[activeRef].clicks += 1;
+        localStorage.setItem("cekracun_attr_v1", JSON.stringify(stats));
+      } catch {}
+    });
+
+    window.__cekracunStats = () => {
+      try {
+        return JSON.parse(localStorage.getItem("cekracun_attr_v1") || "{}");
+      } catch {
+        return {};
+      }
+    };
+
+    const q = (params.get("q") || "").trim();
+    const mode = (params.get("mode") || "").trim().toLowerCase();
+    const theme = (params.get("theme") || "").trim().toLowerCase();
+    const cat = (params.get("cat") || "").trim().toLowerCase();
+    const budget = Number(params.get("budget") || 0);
+
+    if (theme) {
+      const pill = simThemePills.find((p) => p.dataset.theme === theme);
+      if (pill) {
+        pill.click();
+        if (budget >= 15000) setBudget(budget, true);
+      }
+    } else if (cat || budget >= 15000) {
+      if (cat && CAT_LABELS[cat]) {
+        simState.cat = cat;
+        simCatChips.forEach((c) => c.classList.toggle("is-active", c.dataset.cat === cat));
+      }
+      if (budget >= 15000) setBudget(budget, false);
+      else buildBundle(true);
+    }
+
+    if (q) {
+      catState.query = q;
+      catSearchInput.value = q;
+      catState.limit = 24;
+      renderCatalog();
+      const tabKat = document.getElementById("tab-katalog");
+      if (tabKat) tabKat.click();
+    } else if (mode === "game" || mode === "katalog" || mode === "simulator") {
+      const targetTab = document.getElementById(`tab-${mode}`);
+      if (targetTab) targetTab.click();
+    }
+  }
+
   // Boot all 3 panels
   buildBundle(true);
   updateGameStats();
   pickMysteryItem();
   renderCatalog();
+  applyDeepLinkAndAttribution();
 })();
