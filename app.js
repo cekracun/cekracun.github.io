@@ -71,6 +71,8 @@
     budget: 150000,
     cat: "all",
     maxItemPrice: 0,
+    minItemPrice: 0,
+    minSold: 0,
     activeTheme: "",
     lockedIds: new Set(),
     bundle: [],
@@ -103,7 +105,12 @@
   function itemQualityScore(item) {
     const soldBoost = Math.log10(Math.max(item.s, 10) + 1);
     const ratingBoost = item.r ? item.r : 4.5;
-    return ratingBoost * 1.4 + soldBoost + Math.random() * 1.8;
+    let score = ratingBoost * 1.4 + soldBoost + Math.random() * 1.8;
+    // v1.5 Conversion-First: prioritaskan Elite Impulse Winners
+    if (item.s >= 5000) score += 6;
+    if (item.r && item.r >= 4.8) score += 4;
+    if (item.p >= 15000 && item.p <= 75000) score += 4;
+    return score;
   }
 
   function buildBundle(reroll = true) {
@@ -121,7 +128,10 @@
       (x) =>
         (simState.cat === "all" || x.c === simState.cat) &&
         !usedIds.has(x.id) &&
-        x.p <= itemCap
+        x.p <= itemCap &&
+        x.s >= 500 &&
+        (simState.minItemPrice <= 0 || x.p >= simState.minItemPrice) &&
+        (simState.minSold <= 0 || x.s >= simState.minSold)
     );
 
     const ranked = pool
@@ -281,6 +291,8 @@
     simState.budget = clean;
     if (!keepTheme) {
       simState.maxItemPrice = 0;
+      simState.minItemPrice = 0;
+      simState.minSold = 0;
       simState.activeTheme = "";
       syncThemePills();
     }
@@ -301,6 +313,8 @@
     chip.addEventListener("click", () => {
       simState.cat = chip.dataset.cat;
       simState.maxItemPrice = 0;
+      simState.minItemPrice = 0;
+      simState.minSold = 0;
       simState.activeTheme = "";
       syncThemePills();
       simCatChips.forEach((c) => c.classList.toggle("is-active", c === chip));
@@ -313,6 +327,8 @@
     pill.addEventListener("click", () => {
       simState.cat = pill.dataset.cat;
       simState.maxItemPrice = Number(pill.dataset.max) || 0;
+      simState.minItemPrice = Number(pill.dataset.min) || 0;
+      simState.minSold = Number(pill.dataset.minsold) || 0;
       simState.activeTheme = pill.dataset.theme;
       syncThemePills();
       simCatChips.forEach((c) => c.classList.toggle("is-active", c.dataset.cat === simState.cat));
@@ -736,9 +752,24 @@
       cta.href = item.u;
       cta.target = "_blank";
       cta.rel = "noopener noreferrer";
-      cta.textContent = "Cek di Shopee ↗";
+      cta.textContent = "Cek & Masukin Keranjang →";
 
-      body.append(title, metaRow, cta);
+      const badges = document.createElement("div");
+      badges.className = "product-badges";
+      if (item.s >= 10000) {
+        const b = document.createElement("span");
+        b.className = "product-badge is-hot";
+        b.textContent = "10RB+ Terjual";
+        badges.appendChild(b);
+      }
+      if (item.r) {
+        const b = document.createElement("span");
+        b.className = "product-badge is-rating";
+        b.textContent = `★ ${item.r.toFixed(1)}`;
+        badges.appendChild(b);
+      }
+
+      body.append(title, metaRow, badges, cta);
       card.append(thumbWrap, body);
       catGridEl.appendChild(card);
     });

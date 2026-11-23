@@ -1186,3 +1186,50 @@ input[type="range"] {
     grid-template-columns: 1fr;
   }
 }
+
+/* v1.5 Conversion-First: Gajian promo banner, Mall pill, product badges */
+.promo-banner {
+  background: var(--ink);
+  color: #FFFFFF;
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 7px 12px;
+}
+.promo-banner strong { color: #FFD166; }
+.promo-banner-sub { color: #FFD166; font-weight: 700; }
+
+.theme-pill.is-mall.is-active {
+  background: var(--accent);
+  border-color: var(--accent-dark);
+}
+
+.product-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.product-badges:empty { display: none; }
+.product-badge {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--ink);
+}
+.product-badge.is-hot {
+  background: #121210;
+  color: #FFD166;
+  border-color: #121210;
+}
+.product-badge.is-rating {
+  background: #FFF4D6;
+  color: #8A4B00;
+  border-color: rgba(180, 100, 0, 0.25);
+}
