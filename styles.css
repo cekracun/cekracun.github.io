@@ -1233,3 +1233,9 @@ input[type="range"] {
   color: #8A4B00;
   border-color: rgba(180, 100, 0, 0.25);
 }
+.badge-mall,
+.product-badge.is-mall {
+  background: var(--good);
+  color: #FFFFFF;
+  border-color: var(--good);
+}

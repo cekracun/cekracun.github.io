@@ -110,6 +110,7 @@
     if (item.s >= 5000) score += 6;
     if (item.r && item.r >= 4.8) score += 4;
     if (item.p >= 15000 && item.p <= 75000) score += 4;
+    if (item.m === 1) score += 3;
     return score;
   }
 
@@ -124,7 +125,7 @@
     }
 
     const itemCap = simState.maxItemPrice > 0 ? Math.min(simState.maxItemPrice, simState.budget) : simState.budget;
-    const pool = PRODUCTS.filter(
+    const basePool = PRODUCTS.filter(
       (x) =>
         (simState.cat === "all" || x.c === simState.cat) &&
         !usedIds.has(x.id) &&
@@ -133,6 +134,8 @@
         (simState.minItemPrice <= 0 || x.p >= simState.minItemPrice) &&
         (simState.minSold <= 0 || x.s >= simState.minSold)
     );
+    const mallPool = basePool.filter((x) => x.m === 1);
+    const pool = simState.activeTheme === "mall50" && mallPool.length >= 3 ? mallPool : basePool;
 
     const ranked = pool
       .map((item) => ({ item, score: itemQualityScore(item) }))
@@ -195,6 +198,12 @@
       catBadge.textContent = CAT_LABELS[item.c] || item.c;
       badges.appendChild(catBadge);
 
+      if (item.m === 1) {
+        const mallBadge = document.createElement("span");
+        mallBadge.className = "badge badge-mall";
+        mallBadge.textContent = "Shopee Mall";
+        badges.appendChild(mallBadge);
+      }
       if (item.p < 20000) {
         const impBadge = document.createElement("span");
         impBadge.className = "badge badge-impulse";
@@ -654,12 +663,14 @@
     maxPrice: 0,
     sort: "sold",
     limit: 24,
+    mallOnly: false,
   };
 
   const catSearchInput = document.getElementById("cat-search");
   const catSortSelect = document.getElementById("cat-sort");
   const catFilterChips = [...document.querySelectorAll("#cat-filter-chips .chip")];
   const priceFilterChips = [...document.querySelectorAll("#price-filter-chips .chip")];
+  const catMallBtn = document.getElementById("cat-mall-only");
   const catCountLabel = document.getElementById("cat-count-label");
   const catGridEl = document.getElementById("cat-grid");
   const catLoadMoreBtn = document.getElementById("cat-load-more");
@@ -669,6 +680,7 @@
     let list = PRODUCTS.filter((x) => {
       if (catState.cat !== "all" && x.c !== catState.cat) return false;
       if (catState.maxPrice > 0 && x.p > catState.maxPrice) return false;
+      if (catState.mallOnly && x.m !== 1) return false;
       if (q && !x.t.toLowerCase().includes(q)) return false;
       return true;
     });
@@ -756,6 +768,12 @@
 
       const badges = document.createElement("div");
       badges.className = "product-badges";
+      if (item.m === 1) {
+        const b = document.createElement("span");
+        b.className = "product-badge is-mall";
+        b.textContent = "Shopee Mall";
+        badges.appendChild(b);
+      }
       if (item.s >= 10000) {
         const b = document.createElement("span");
         b.className = "product-badge is-hot";
@@ -810,6 +828,16 @@
       renderCatalog();
     });
   });
+
+  if (catMallBtn) {
+    catMallBtn.addEventListener("click", () => {
+      catState.mallOnly = !catState.mallOnly;
+      catState.limit = 24;
+      catMallBtn.classList.toggle("is-active", catState.mallOnly);
+      catMallBtn.setAttribute("aria-pressed", catState.mallOnly ? "true" : "false");
+      renderCatalog();
+    });
+  }
 
   catLoadMoreBtn.addEventListener("click", () => {
     catState.limit += 24;
