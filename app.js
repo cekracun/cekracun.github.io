@@ -106,10 +106,10 @@
     const soldBoost = Math.log10(Math.max(item.s, 10) + 1);
     const ratingBoost = item.r ? item.r : 4.5;
     let score = ratingBoost * 1.4 + soldBoost + Math.random() * 1.8;
-    // v1.5 Conversion-First: prioritaskan Elite Impulse Winners
+    // v1.7 High-Payout Daily & Life-Hack Winners
     if (item.s >= 5000) score += 6;
     if (item.r && item.r >= 4.8) score += 4;
-    if (item.p >= 15000 && item.p <= 75000) score += 4;
+    if (item.p >= 70000 && item.p <= 350000) score += 4;
     if (item.m === 1) score += 3;
     return score;
   }
